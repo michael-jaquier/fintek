@@ -1,0 +1,30 @@
+[package]
+name = "fintek"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0 OR CC0-1.0"
+keywords = ["stocks"]
+description = "Simple stock ticker"
+categories = ["stocks, grafana, prometheus, metrics"]
+repository = "https://apple-bear.com/gitea/michael/stocks"
+
+[dependencies]
+axum = "0.7.4"
+dotenv = "0.15.0"
+lazy_static = "1.4.0"
+prometheus = "0.13.3"
+reqwest = "0.11.24"
+tokio = { version = "1.36.0", features = ["full"] }
+tracing = "0.1.40"
+warp = "0.3.6"
+tracing-subscriber = { version = "0.3.17", features = [
+    "env-filter",
+    "json",
+    "fmt",
+] }
+rand = "0.8.5"
+rng = "0.1.0"
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+chrono = "0.4.34"
+chrono-tz = "0.8.6"
