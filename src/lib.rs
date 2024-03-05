@@ -1,9 +1,6 @@
 pub mod metrics;
 
-
-
-
-
+use core::num;
 use reqwest::Error;
 use serde::Deserialize;
 use serde::Serialize;
@@ -73,7 +70,7 @@ pub async fn should_sleep(market: Markets, api_key: &str) -> Result<u64, Error> 
                     trace!(market = %m, "Market is closed");
                     let time_to_open = object["time_to_open"]
                         .as_str()
-                        .unwrap()
+                        .unwrap_or_else(|| "0:0:0")
                         .split(':')
                         .collect::<Vec<_>>();
                     let hours: u64 = time_to_open[0].parse().ok().unwrap_or_default();
@@ -95,17 +92,29 @@ pub fn calculate_sleep_duration(
     period_in_seconds1: u64,
     rate_limit2: u64,
     period_in_seconds2: u64,
-) -> u64 {
-    let calls_per_ticker1 = rate_limit1 / num_tickers as u64;
-    let sleep_duration1 = period_in_seconds1 / calls_per_ticker1;
+) -> Option<u64> {
+    if num_tickers == 0 {
+        return None;
+    }
 
-    let calls_per_ticker2 = rate_limit2 / num_tickers as u64;
-    let sleep_duration2 = period_in_seconds2 / calls_per_ticker2;
+    let calls_per_ticker1 = rate_limit1
+        .checked_div(num_tickers as u64)
+        .unwrap_or_default();
+    let sleep_duration1 = period_in_seconds1
+        .checked_sub(calls_per_ticker1)
+        .unwrap_or_default();
+
+    let calls_per_ticker2 = rate_limit2
+        .checked_sub(num_tickers as u64)
+        .unwrap_or_default();
+    let sleep_duration2 = period_in_seconds2
+        .checked_sub(calls_per_ticker2)
+        .unwrap_or_default();
 
     // Choose the stricter rate limit
     let sleep_duration = std::cmp::min(sleep_duration1, sleep_duration2);
 
-    sleep_duration
+    Some(sleep_duration)
 }
 
 #[instrument(skip(api_key))]
@@ -118,10 +127,13 @@ pub async fn call_api(symbol: &str, api_key: &str) -> Result<(), Error> {
 
     let data = response.text().await?;
     // {"price":"179.64000"}
-    let v: Value = serde_json::from_str(&data).unwrap();
-    let price: f64 = v["price"].as_str().unwrap().parse().unwrap();
-    trace!(price, symbol, "Updating stock price");
-    metrics::update_stock_price(price, symbol);
+    let v: Value = serde_json::from_str(&data).unwrap_or_else(|_| Value::Null);
+    if let Some(price) = v["price"].as_str() {
+        trace!(price, symbol, "Updating stock price");
+        if let Some(parsed) = price.parse::<f64>().ok() {
+            metrics::update_stock_price(parsed, symbol);
+        }
+    }
     Ok(())
 }
 

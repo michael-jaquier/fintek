@@ -1,10 +1,6 @@
 use ::std::env;
 use dotenv::dotenv;
-use fintek::{
-    check_tickers,
-    metrics::{MetricServer},
-    Markets, StockMarket, Tickers,
-};
+use fintek::{check_tickers, metrics::MetricServer, Markets, StockMarket, Tickers};
 use reqwest::Error;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 #[tokio::main]
@@ -47,12 +43,14 @@ async fn main() -> Result<(), Error> {
         let sleep_duration =
             fintek::calculate_sleep_duration(num_tickers, 8, 60, 800, (6.5 * 60. * 60.) as u64);
 
-        for ticker in tickers.get_tickers() {
-            let _ = fintek::call_api(ticker, &api_key).await.map_err(|e| {
-                tracing::error!(error = ?e, "Failed to call API");
-                e
-            });
-            tokio::time::sleep(tokio::time::Duration::from_secs(sleep_duration)).await;
+        if let Some(sleep_duration) = sleep_duration {
+            for ticker in tickers.get_tickers() {
+                let _ = fintek::call_api(ticker, &api_key).await.map_err(|e| {
+                    tracing::error!(error = ?e, "Failed to call API");
+                    e
+                });
+                tokio::time::sleep(tokio::time::Duration::from_secs(sleep_duration)).await;
+            }
         }
     }
 }
