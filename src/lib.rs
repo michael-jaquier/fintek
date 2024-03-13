@@ -59,8 +59,8 @@ pub async fn should_sleep(market: Markets, api_key: &str) -> Result<u64, Error> 
     );
     let response = reqwest::get(&url).await?;
     let data = response.text().await?;
-    let v: Value = serde_json::from_str(&data).unwrap();
-    if let Some(array) = v.as_array() {
+    let maybe_value: Value = serde_json::from_str(&data).unwrap_or_default();
+    if let Some(array) = maybe_value.as_array() {
         for object in array {
             if let Some(is_market_open) = object["is_market_open"].as_bool() {
                 if is_market_open {
