@@ -55,4 +55,3 @@ async fn main() -> Result<(), Error> {
     }
 }
 
-// {"price":"179.64000"}

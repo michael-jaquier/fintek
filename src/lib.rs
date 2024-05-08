@@ -1,6 +1,5 @@
 pub mod metrics;
 
-use core::num;
 use reqwest::Error;
 use serde::Deserialize;
 use serde::Serialize;
@@ -126,7 +125,6 @@ pub async fn call_api(symbol: &str, api_key: &str) -> Result<(), Error> {
     let response = reqwest::get(&url).await?;
 
     let data = response.text().await?;
-    // {"price":"179.64000"}
     let v: Value = serde_json::from_str(&data).unwrap_or_else(|_| Value::Null);
     if let Some(price) = v["price"].as_str() {
         trace!(price, symbol, "Updating stock price");
